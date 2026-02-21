@@ -8,8 +8,6 @@ let photoTaken = false;
 let lastPinchState = false;
 let isAdjustingFrame = true;
 let countdown = null;
-
-// new variable
 let captureDelay = false;
 
 // Hands setup
@@ -50,7 +48,6 @@ hands.onResults((results) => {
 
   // raw camera centered with correct ratio
   ctx.save();
-
   ctx.translate(canvas.width, 0);
 
   // mirror horizontally
@@ -86,8 +83,6 @@ hands.onResults((results) => {
         y: p.y,
         z: p.z,
       }));
-      // ignore ghost frames when hand leaves
-      //if (!landmarks || landmarks.length !== 21) continue;
 
       drawConnectors(ctx, mirrored, HAND_CONNECTIONS, {
         color: "#00FF00",
@@ -130,7 +125,7 @@ hands.onResults((results) => {
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
 
-      // flash ONLY over the video area
+      // flash only over the video area
       ctx.fillStyle = "white";
       ctx.globalAlpha = 0.85;
       ctx.fillRect(offsetX, offsetY, drawWidth, drawHeight);
@@ -188,27 +183,6 @@ navigator.mediaDevices
   })
   .catch((err) => console.error(err));
 
-/* video.onloadedmetadata = () => {
-  const videoRatio = video.videoWidth / video.videoHeight;
-
-  const maxWidth = window.innerWidth;
-  const maxHeight = window.innerHeight;
-
-  let drawWidth = maxWidth;
-  let drawHeight = drawWidth / videoRatio;
-
-  if (drawHeight > maxHeight) {
-    drawHeight = maxHeight;
-    drawWidth = drawHeight * videoRatio;
-  }
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  canvas.style.width = drawWidth + "px";
-  canvas.style.height = drawHeight + "px";
-}; */
-
 // photo function
 function takePhoto() {
   photoTaken = true;
@@ -219,34 +193,23 @@ function takePhoto() {
   const photoCtx = photoCanvas.getContext("2d");
 
   photoCtx.drawImage(
-    video,
+    canvas,
     frameBox.x,
     frameBox.y,
     frameBox.width,
     frameBox.height,
     0,
     0,
-    frameBox.width,
-    frameBox.height,
+    photoCanvas.width,
+    photoCanvas.height,
   );
 
   const photoDataUrl = photoCanvas.toDataURL("image/png");
 
   showPreview(photoDataUrl); // added
-
-  /*   if (typeof savePhoto === "function") {
-    savePhoto(photoDataUrl);
-  }
-
-  setTimeout(() => {
-    isAdjustingFrame = true;
-    countdown = null;
-    photoTaken = false;
-  }, 3000); */
 }
 
 // preview function
-
 function showPreview(dataUrl) {
   // overlay container
   const overlay = document.createElement("div");
@@ -303,12 +266,6 @@ function showPreview(dataUrl) {
 
   document.body.appendChild(overlay);
 }
-
-/////// up to this point everything functions
-// when go live asks for the permission of the camera, camera frame pops up in hd quality
-// gesture detection works
-
-//starting on ddetecting the frame
 
 //initialize a white rectangle
 let frameBox = {
@@ -372,10 +329,6 @@ function detectGestures(hands) {
   frameBox.x = centerX - width / 2;
   frameBox.y = centerY - height / 2;
 }
-
-/// up to this point eveyrhting works
-// the frame works and is only visible when you use two of your hands
-// you can adjust the frame by dragging your fingers
 
 let frameLocked = false;
 let countdownActive = false;
