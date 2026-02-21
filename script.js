@@ -175,3 +175,7 @@ function takePhoto() {
     photoTaken = false;
   }, 3000);
 }
+
+/////// up to this point everything functions
+// when go live asks for the permission of the camera, camera frame pops up in hd quality
+// gesture detection works
