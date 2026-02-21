@@ -1,13 +1,23 @@
+/* Remove default browser spacing */
 body {
+  margin: 0;
   background: black;
-  text-align: center;
+  overflow: hidden;
 }
 
-video,
+/* Hide the raw webcam video (we only draw it on canvas) */
+video {
+  display: none;
+}
+
+/* Make canvas fill the screen */
 canvas {
-  width: 640px;
-  max-width: 90%;
-  margin: 10px auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  width: 100vw;
+  height: 100vh;
+
   display: block;
-  border: 2px solid white;
 }

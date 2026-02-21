@@ -2,6 +2,8 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+let processingFrame = false;
+
 let lastFrame = null;
 let photoTaken = false;
 let lastPinchState = false;
@@ -14,15 +16,39 @@ let countdown = null;
 // function drawFrame() {}
 // function savePhoto() {}
 
-// Camera start
-navigator.mediaDevices
-  .getUserMedia({
-    video: { width: 640, height: 480 },
-  })
-  .then((stream) => {
-    video.srcObject = stream;
-  })
-  .catch((err) => console.error("Camera error:", err));
+/* // Camera start
+async function startCamera() {
+  // STEP 1: ask for camera permission first
+  const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+  // immediately stop this temp stream
+  tempStream.getTracks().forEach((track) => track.stop());
+
+  // STEP 2: now labels are visible
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const cameras = devices.filter((d) => d.kind === "videoinput");
+
+  console.log("Available cameras:", cameras);
+
+  // STEP 3: lock to FaceTime camera
+  const selectedCamera =
+    cameras.find((cam) => cam.label.includes("FaceTime")) || cameras[0];
+
+  console.log("Using camera:", selectedCamera.label);
+
+  // STEP 4: start real stream
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      deviceId: { exact: selectedCamera.deviceId },
+      width: 640,
+      height: 480,
+    },
+  });
+
+  video.srcObject = stream;
+}
+
+startCamera().catch((err) => console.error("Camera error:", err)); */
 
 // Hands setup
 const hands = new Hands({
@@ -37,22 +63,23 @@ hands.setOptions({
 });
 
 hands.onResults((results) => {
+  // ALWAYS draw raw video first (prevents flicker)
+  ctx.drawImage(
+    video,
+    0,
+    0,
+    video.videoWidth,
+    video.videoHeight,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+  );
+
   const hasHands =
     results.multiHandLandmarks && results.multiHandLandmarks.length > 0;
 
-  ctx.save();
-
-  // store last valid frame to prevent flicker
-  if (results.image) {
-    lastFrame = results.image;
-  }
-
-  // draw frame if available
-  if (lastFrame) {
-    ctx.drawImage(lastFrame, 0, 0, canvas.width, canvas.height);
-  }
-
-  // draw landmarks + detect gestures
+  // draw landmarks if present
   if (!photoTaken && hasHands) {
     for (const landmarks of results.multiHandLandmarks) {
       drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
@@ -77,26 +104,38 @@ hands.onResults((results) => {
   if (typeof drawFrame === "function") {
     drawFrame();
   }
-
-  ctx.restore();
 });
 
 // Strat media after the video is ready
-video.addEventListener("loadeddata", () => {
-  // lock canvas size ONCE
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 480;
+const camera = new Camera(video, {
+  onFrame: async () => {
+    if (processingFrame) return;
 
-  const camera = new Camera(video, {
-    onFrame: async () => {
+    processingFrame = true;
+
+    try {
       await hands.send({ image: video });
-    },
-    width: canvas.width,
-    height: canvas.height,
-  });
-
-  camera.start();
+    } finally {
+      processingFrame = false;
+    }
+  },
+  width: 640,
+  height: 480,
 });
+
+camera.start();
+
+// ensure canvas size after stream begins
+video.onloadedmetadata = () => {
+  const w = video.videoWidth;
+  const h = video.videoHeight;
+
+  canvas.width = w;
+  canvas.height = h;
+
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+};
 
 // photo fucntion
 function takePhoto() {
