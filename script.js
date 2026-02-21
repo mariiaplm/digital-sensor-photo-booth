@@ -46,7 +46,27 @@ hands.onResults((results) => {
   }
 
   // raw camera centered with correct ratio
-  ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight);
+  ctx.save();
+
+  ctx.translate(canvas.width, 0);
+
+  // mirror horizontally
+  ctx.scale(-1, 1);
+
+  // draw mirrored video
+  ctx.drawImage(
+    video,
+    0,
+    0,
+    vw,
+    vh,
+    canvas.width - offsetX - drawWidth,
+    offsetY,
+    drawWidth,
+    drawHeight,
+  );
+
+  ctx.restore();
 
   // align landmarks to same transform as video
   ctx.save();
@@ -58,15 +78,20 @@ hands.onResults((results) => {
 
   if (!photoTaken && hasHands) {
     for (const landmarks of results.multiHandLandmarks) {
+      const mirrored = landmarks.map((p) => ({
+        x: 1 - p.x,
+        y: p.y,
+        z: p.z,
+      }));
       // ignore ghost frames when hand leaves
-      if (!landmarks || landmarks.length !== 21) continue;
+      //if (!landmarks || landmarks.length !== 21) continue;
 
-      drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
+      drawConnectors(ctx, mirrored, HAND_CONNECTIONS, {
         color: "#00FF00",
         lineWidth: 2,
       });
 
-      drawLandmarks(ctx, landmarks, {
+      drawLandmarks(ctx, mirrored, {
         color: "#FF0000",
         radius: 2,
       });
@@ -179,3 +204,57 @@ function takePhoto() {
 /////// up to this point everything functions
 // when go live asks for the permission of the camera, camera frame pops up in hd quality
 // gesture detection works
+
+//starting on ddetecting the frame
+
+//initialize a white rectangle
+let frameBox = {
+  x: 0,
+  y: 0,
+  width: 0,
+  height: 0,
+};
+
+function drawFrame() {
+  if (frameBox.width < 20 || frameBox.height < 20) return;
+
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(frameBox.x, frameBox.y, frameBox.width, frameBox.height);
+}
+
+function detectGestures(hands) {
+  if (!hands || hands.length < 2) {
+    frameBox.width = 0;
+    frameBox.height = 0;
+    return;
+  }
+
+  const p1 = hands[0][8]; // index tip hand1
+  const p2 = hands[1][8]; // index tip hand2
+
+  // mirror X only (camera flipped)
+  const x1 = (1 - p1.x) * canvas.width;
+  const y1 = p1.y * canvas.height;
+
+  const x2 = (1 - p2.x) * canvas.width;
+  const y2 = p2.y * canvas.height;
+
+  // center between fingers
+  const centerX = (x1 + x2) / 2;
+  const centerY = (y1 + y2) / 2;
+
+  // distance between fingers
+  const distX = Math.abs(x1 - x2);
+  const distY = Math.abs(y1 - y2);
+
+  // frame size (adjust sensitivity here)
+  const width = Math.max(80, distX * 1.4);
+  const height = Math.max(80, distY * 1.2);
+
+  // position from center
+  frameBox.width = width;
+  frameBox.height = height;
+  frameBox.x = centerX - width / 2;
+  frameBox.y = centerY - height / 2;
+}
