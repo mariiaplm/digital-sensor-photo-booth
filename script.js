@@ -9,6 +9,9 @@ let lastPinchState = false;
 let isAdjustingFrame = true;
 let countdown = null;
 
+// new variable
+let captureDelay = false;
+
 // Hands setup
 const hands = new Hands({
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
@@ -118,16 +121,34 @@ hands.onResults((results) => {
     ctx.font = "bold 100px Arial";
     ctx.textAlign = "center";
 
-    ctx.fillText(
-      seconds > 0 ? seconds : "📸",
-      canvas.width / 2,
-      canvas.height / 2,
-    );
+    if (seconds > 0) {
+      ctx.fillText(seconds, canvas.width / 2, canvas.height / 2);
+    } else {
+      ctx.save();
 
-    if (elapsed >= countdownTime) {
-      countdownActive = false;
-      takePhoto();
-      frameLocked = false;
+      // mirror same as video
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+
+      // flash ONLY over the video area
+      ctx.fillStyle = "white";
+      ctx.globalAlpha = 0.85;
+      ctx.fillRect(offsetX, offsetY, drawWidth, drawHeight);
+      ctx.globalAlpha = 1;
+
+      ctx.restore();
+    }
+
+    if (elapsed >= countdownTime && !captureDelay) {
+      captureDelay = true;
+
+      setTimeout(() => {
+        takePhoto();
+
+        countdownActive = false;
+        frameLocked = false;
+        captureDelay = false;
+      }, 600); // give flash time to show
     }
   }
 });
@@ -167,7 +188,7 @@ navigator.mediaDevices
   })
   .catch((err) => console.error(err));
 
-video.onloadedmetadata = () => {
+/* video.onloadedmetadata = () => {
   const videoRatio = video.videoWidth / video.videoHeight;
 
   const maxWidth = window.innerWidth;
@@ -186,7 +207,7 @@ video.onloadedmetadata = () => {
 
   canvas.style.width = drawWidth + "px";
   canvas.style.height = drawHeight + "px";
-};
+}; */
 
 // photo function
 function takePhoto() {
@@ -244,55 +265,21 @@ function drawFrame() {
   ctx.strokeRect(frameBox.x, frameBox.y, frameBox.width, frameBox.height);
 }
 
-/* function detectGestures(hands) {
-  if (!hands || hands.length < 2) {
-    frameBox.width = 0;
-    frameBox.height = 0;
-    return;
-  }
-
-  const p1 = hands[0][8]; // index tip hand1
-  const p2 = hands[1][8]; // index tip hand2
-
-  // mirror X only (camera flipped)
-  const x1 = (1 - p1.x) * canvas.width;
-  const y1 = p1.y * canvas.height;
-
-  const x2 = (1 - p2.x) * canvas.width;
-  const y2 = p2.y * canvas.height;
-
-  // center between fingers
-  const centerX = (x1 + x2) / 2;
-  const centerY = (y1 + y2) / 2;
-
-  // distance between fingers
-  const distX = Math.abs(x1 - x2);
-  const distY = Math.abs(y1 - y2);
-
-  // frame size (adjust sensitivity here)
-  const width = Math.max(80, distX * 1.4);
-  const height = Math.max(80, distY * 1.2);
-
-  // position from center
-  frameBox.width = width;
-  frameBox.height = height;
-  frameBox.x = centerX - width / 2;
-  frameBox.y = centerY - height / 2;
-} */
-
 // new detectGestures(hands) function
 function detectGestures(hands) {
   if (!hands || hands.length < 2) {
-    frameLocked = false;
-    frameBox.width = 0;
-    frameBox.height = 0;
+    if (!countdownActive) {
+      frameLocked = false;
+      frameBox.width = 0;
+      frameBox.height = 0;
+    }
     return;
   }
 
   const palm1 = isOpenPalm(hands[0]);
   const palm2 = isOpenPalm(hands[1]);
 
-  if (!frameLocked && (palm1 || palm2)) {
+  if (!frameLocked && (palm1 || palm2) && !countdownActive) {
     frameLocked = true;
     countdownActive = true;
     countdownStart = Date.now();
