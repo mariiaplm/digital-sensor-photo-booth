@@ -104,10 +104,31 @@ hands.onResults((results) => {
     lastPinchState = false;
   }
 
-  ctx.restore(); // 🔴 MUST restore after scaling
+  ctx.restore();
 
   if (typeof drawFrame === "function") {
     drawFrame();
+  }
+
+  if (countdownActive) {
+    const elapsed = Date.now() - countdownStart;
+    const seconds = Math.ceil((countdownTime - elapsed) / 1000);
+
+    ctx.fillStyle = "white";
+    ctx.font = "bold 100px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillText(
+      seconds > 0 ? seconds : "📸",
+      canvas.width / 2,
+      canvas.height / 2,
+    );
+
+    if (elapsed >= countdownTime) {
+      countdownActive = false;
+      takePhoto();
+      frameLocked = false;
+    }
   }
 });
 
@@ -223,7 +244,7 @@ function drawFrame() {
   ctx.strokeRect(frameBox.x, frameBox.y, frameBox.width, frameBox.height);
 }
 
-function detectGestures(hands) {
+/* function detectGestures(hands) {
   if (!hands || hands.length < 2) {
     frameBox.width = 0;
     frameBox.height = 0;
@@ -257,8 +278,69 @@ function detectGestures(hands) {
   frameBox.height = height;
   frameBox.x = centerX - width / 2;
   frameBox.y = centerY - height / 2;
+} */
+
+// new detectGestures(hands) function
+function detectGestures(hands) {
+  if (!hands || hands.length < 2) {
+    frameLocked = false;
+    frameBox.width = 0;
+    frameBox.height = 0;
+    return;
+  }
+
+  const palm1 = isOpenPalm(hands[0]);
+  const palm2 = isOpenPalm(hands[1]);
+
+  if (!frameLocked && (palm1 || palm2)) {
+    frameLocked = true;
+    countdownActive = true;
+    countdownStart = Date.now();
+    return;
+  }
+
+  if (frameLocked) return;
+
+  const p1 = hands[0][8];
+  const p2 = hands[1][8];
+
+  const x1 = (1 - p1.x) * canvas.width;
+  const y1 = p1.y * canvas.height;
+
+  const x2 = (1 - p2.x) * canvas.width;
+  const y2 = p2.y * canvas.height;
+
+  const centerX = (x1 + x2) / 2;
+  const centerY = (y1 + y2) / 2;
+
+  const distX = Math.abs(x1 - x2);
+  const distY = Math.abs(y1 - y2);
+
+  const width = Math.max(80, distX * 1.4);
+  const height = Math.max(80, distY * 1.2);
+
+  frameBox.width = width;
+  frameBox.height = height;
+  frameBox.x = centerX - width / 2;
+  frameBox.y = centerY - height / 2;
 }
 
 /// up to this point eveyrhting works
 // the frame works and is only visible when you use two of your hands
 // you can adjust the frame by dragging your fingers
+
+let frameLocked = false;
+let countdownActive = false;
+let countdownStart = 0;
+const countdownTime = 3000;
+
+function isOpenPalm(hand) {
+  const tips = [8, 12, 16, 20];
+  let extended = 0;
+
+  for (let tip of tips) {
+    if (hand[tip].y < hand[tip - 2].y) extended++;
+  }
+
+  return extended >= 3;
+}
