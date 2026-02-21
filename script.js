@@ -2,53 +2,12 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+// State
 let processingFrame = false;
-
-let lastFrame = null;
 let photoTaken = false;
 let lastPinchState = false;
 let isAdjustingFrame = true;
 let countdown = null;
-
-// These must already exist in your project
-// let frameBox = { x: 100, y: 100, width: 200, height: 200 };
-// function detectGestures() {}
-// function drawFrame() {}
-// function savePhoto() {}
-
-/* // Camera start
-async function startCamera() {
-  // STEP 1: ask for camera permission first
-  const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-  // immediately stop this temp stream
-  tempStream.getTracks().forEach((track) => track.stop());
-
-  // STEP 2: now labels are visible
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  const cameras = devices.filter((d) => d.kind === "videoinput");
-
-  console.log("Available cameras:", cameras);
-
-  // STEP 3: lock to FaceTime camera
-  const selectedCamera =
-    cameras.find((cam) => cam.label.includes("FaceTime")) || cameras[0];
-
-  console.log("Using camera:", selectedCamera.label);
-
-  // STEP 4: start real stream
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: {
-      deviceId: { exact: selectedCamera.deviceId },
-      width: 640,
-      height: 480,
-    },
-  });
-
-  video.srcObject = stream;
-}
-
-startCamera().catch((err) => console.error("Camera error:", err)); */
 
 // Hands setup
 const hands = new Hands({
@@ -57,94 +16,139 @@ const hands = new Hands({
 
 hands.setOptions({
   maxNumHands: 2,
-  modelComplexity: 0,
+  modelComplexity: 0, // keep light for smooth performance
   minDetectionConfidence: 0.6,
   minTrackingConfidence: 0.6,
 });
 
+// Draw loop
 hands.onResults((results) => {
-  // ALWAYS draw raw video first (prevents flicker)
-  ctx.drawImage(
-    video,
-    0,
-    0,
-    video.videoWidth,
-    video.videoHeight,
-    0,
-    0,
-    canvas.width,
-    canvas.height,
-  );
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+
+  const canvasRatio = canvas.width / canvas.height;
+  const videoRatio = vw / vh;
+
+  let drawWidth, drawHeight, offsetX, offsetY;
+
+  if (videoRatio > canvasRatio) {
+    drawWidth = canvas.width;
+    drawHeight = canvas.width / videoRatio;
+    offsetX = 0;
+    offsetY = (canvas.height - drawHeight) / 2;
+  } else {
+    drawHeight = canvas.height;
+    drawWidth = canvas.height * videoRatio;
+    offsetY = 0;
+    offsetX = (canvas.width - drawWidth) / 2;
+  }
+
+  // raw camera centered with correct ratio
+  ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight);
+
+  // align landmarks to same transform as video
+  ctx.save();
+  ctx.translate(offsetX, offsetY);
+  ctx.scale(drawWidth / canvas.width, drawHeight / canvas.height);
 
   const hasHands =
     results.multiHandLandmarks && results.multiHandLandmarks.length > 0;
 
-  // draw landmarks if present
   if (!photoTaken && hasHands) {
     for (const landmarks of results.multiHandLandmarks) {
+      // ignore ghost frames when hand leaves
+      if (!landmarks || landmarks.length !== 21) continue;
+
       drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
         color: "#00FF00",
-        lineWidth: 1,
+        lineWidth: 2,
       });
 
       drawLandmarks(ctx, landmarks, {
         color: "#FF0000",
-        lineWidth: 1,
-        radius: 3,
+        radius: 2,
       });
     }
 
     if (typeof detectGestures === "function") {
       detectGestures(results.multiHandLandmarks);
     }
-  } else if (!hasHands) {
+  } else {
     lastPinchState = false;
   }
+
+  ctx.restore(); // 🔴 MUST restore after scaling
 
   if (typeof drawFrame === "function") {
     drawFrame();
   }
 });
 
-// Strat media after the video is ready
-const camera = new Camera(video, {
-  onFrame: async () => {
-    if (processingFrame) return;
+// Start camera
+navigator.mediaDevices
+  .getUserMedia({
+    video: {
+      facingMode: "user",
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+    },
+  })
+  .then((stream) => {
+    video.srcObject = stream;
 
-    processingFrame = true;
+    video.onloadedmetadata = () => {
+      // make canvas exactly to match video resolution
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-    try {
-      await hands.send({ image: video });
-    } finally {
-      processingFrame = false;
-    }
-  },
-  width: 640,
-  height: 480,
-});
+      const camera = new Camera(video, {
+        onFrame: async () => {
+          if (processingFrame) return;
+          processingFrame = true;
 
-camera.start();
+          try {
+            await hands.send({ image: video });
+          } finally {
+            processingFrame = false;
+          }
+        },
+      });
 
-// ensure canvas size after stream begins
+      camera.start();
+    };
+  })
+  .catch((err) => console.error(err));
+
 video.onloadedmetadata = () => {
-  const w = video.videoWidth;
-  const h = video.videoHeight;
+  const videoRatio = video.videoWidth / video.videoHeight;
 
-  canvas.width = w;
-  canvas.height = h;
+  const maxWidth = window.innerWidth;
+  const maxHeight = window.innerHeight;
 
-  canvas.style.width = w + "px";
-  canvas.style.height = h + "px";
+  let drawWidth = maxWidth;
+  let drawHeight = drawWidth / videoRatio;
+
+  if (drawHeight > maxHeight) {
+    drawHeight = maxHeight;
+    drawWidth = drawHeight * videoRatio;
+  }
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  canvas.style.width = drawWidth + "px";
+  canvas.style.height = drawHeight + "px";
 };
 
-// photo fucntion
+// photo function
 function takePhoto() {
   photoTaken = true;
 
   const photoCanvas = document.createElement("canvas");
   photoCanvas.width = frameBox.width;
   photoCanvas.height = frameBox.height;
-
   const photoCtx = photoCanvas.getContext("2d");
 
   photoCtx.drawImage(
