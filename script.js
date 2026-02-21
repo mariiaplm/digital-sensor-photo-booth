@@ -232,7 +232,9 @@ function takePhoto() {
 
   const photoDataUrl = photoCanvas.toDataURL("image/png");
 
-  if (typeof savePhoto === "function") {
+  showPreview(photoDataUrl); // added
+
+  /*   if (typeof savePhoto === "function") {
     savePhoto(photoDataUrl);
   }
 
@@ -240,7 +242,66 @@ function takePhoto() {
     isAdjustingFrame = true;
     countdown = null;
     photoTaken = false;
-  }, 3000);
+  }, 3000); */
+}
+
+// preview function
+
+function showPreview(dataUrl) {
+  // overlay container
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.top = 0;
+  overlay.style.left = 0;
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.background = "rgba(0,0,0,0.9)";
+  overlay.style.display = "flex";
+  overlay.style.flexDirection = "column";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = 9999;
+
+  // image preview
+  const img = document.createElement("img");
+  img.src = dataUrl;
+  img.style.maxWidth = "80%";
+  img.style.maxHeight = "70%";
+  img.style.border = "4px solid white";
+  img.style.marginBottom = "20px";
+
+  // save button
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "Save Photo";
+  saveBtn.style.fontSize = "18px";
+  saveBtn.style.margin = "10px";
+
+  saveBtn.onclick = () => {
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = "photobooth.png";
+    link.click();
+  };
+
+  // retake button
+  const retakeBtn = document.createElement("button");
+  retakeBtn.textContent = "Retake";
+  retakeBtn.style.fontSize = "18px";
+  retakeBtn.style.margin = "10px";
+
+  retakeBtn.onclick = () => {
+    overlay.remove();
+    photoTaken = false;
+    frameLocked = false;
+    countdownActive = false;
+    captureDelay = false;
+  };
+
+  overlay.appendChild(img);
+  overlay.appendChild(saveBtn);
+  overlay.appendChild(retakeBtn);
+
+  document.body.appendChild(overlay);
 }
 
 /////// up to this point everything functions
