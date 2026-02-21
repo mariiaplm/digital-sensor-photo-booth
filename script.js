@@ -10,6 +10,11 @@ let isAdjustingFrame = true;
 let countdown = null;
 let captureDelay = false;
 
+// added the audio
+const shutterSound = new Audio(
+  "freesound_community-iphone-camera-capture-6448.mp3",
+);
+
 // Hands setup
 const hands = new Hands({
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
@@ -137,13 +142,18 @@ hands.onResults((results) => {
     if (elapsed >= countdownTime && !captureDelay) {
       captureDelay = true;
 
+      flashAlpha = 1;
+
       setTimeout(() => {
+        shutterSound.currentTime = 0;
+        shutterSound.play();
+
         takePhoto();
 
         countdownActive = false;
         frameLocked = false;
         captureDelay = false;
-      }, 600); // give flash time to show
+      }); // give flash time to show
     }
   }
 });
@@ -206,7 +216,10 @@ function takePhoto() {
 
   const photoDataUrl = photoCanvas.toDataURL("image/png");
 
-  showPreview(photoDataUrl); // added
+  shutterSound.currentTime = 0;
+  shutterSound.play();
+
+  showPreview(photoDataUrl);
 }
 
 // preview function
