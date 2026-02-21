@@ -258,3 +258,7 @@ function detectGestures(hands) {
   frameBox.x = centerX - width / 2;
   frameBox.y = centerY - height / 2;
 }
+
+/// up to this point eveyrhting works
+// the frame works and is only visible when you use two of your hands
+// you can adjust the frame by dragging your fingers
