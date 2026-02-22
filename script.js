@@ -123,20 +123,6 @@ hands.onResults((results) => {
 
     if (seconds > 0) {
       ctx.fillText(seconds, canvas.width / 2, canvas.height / 2);
-    } else {
-      ctx.save();
-
-      // mirror same as video
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-
-      // flash only over the video area
-      ctx.fillStyle = "white";
-      ctx.globalAlpha = 0.85;
-      ctx.fillRect(offsetX, offsetY, drawWidth, drawHeight);
-      ctx.globalAlpha = 1;
-
-      ctx.restore();
     }
 
     if (elapsed >= countdownTime && !captureDelay) {
