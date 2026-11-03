@@ -14,6 +14,173 @@
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
 
+    <button id="helpBtn" class="help-btn" title="Instructions">?</button>
+
+    <div class="intro" id="intro">
+      <div class="intro-card">
+        <div class="eyebrow">Gesture controlled</div>
+        <h1>Photo Booth</h1>
+        <p class="tagline">
+          No buttons, no timer to set. Your hands are the shutter! Hold up a
+          palm and the camera counts you down.
+        </p>
+
+        <div class="gestures">
+          <div class="gesture">
+            <svg width="46" height="58" viewBox="0 0 56 72" fill="none">
+              <g fill="#f2f3f5">
+                <rect x="13" y="12" width="6" height="30" rx="3" />
+                <rect x="21" y="8" width="6" height="34" rx="3" />
+                <rect x="29" y="11" width="6" height="31" rx="3" />
+                <rect x="37" y="17" width="6" height="25" rx="3" />
+                <rect x="12" y="32" width="32" height="28" rx="11" />
+                <rect
+                  x="1"
+                  y="33"
+                  width="6"
+                  height="20"
+                  rx="3"
+                  transform="rotate(-28 4 43)"
+                />
+              </g>
+            </svg>
+            <div class="gesture-name">One open palm</div>
+            <div class="gesture-desc">
+              Takes a photo using the frame on screen
+            </div>
+          </div>
+
+          <div class="gesture">
+            <svg width="46" height="58" viewBox="0 0 56 72" fill="none">
+              <g fill="#f2f3f5">
+                <rect x="13" y="12" width="6" height="30" rx="3" />
+                <rect x="21" y="28" width="6" height="14" rx="3" />
+                <rect x="29" y="29" width="6" height="13" rx="3" />
+                <rect x="37" y="31" width="6" height="11" rx="3" />
+                <rect x="12" y="32" width="32" height="28" rx="11" />
+                <rect
+                  x="1"
+                  y="36"
+                  width="6"
+                  height="17"
+                  rx="3"
+                  transform="rotate(-20 4 44)"
+                />
+              </g>
+            </svg>
+            <div class="gesture-name">Two index fingers</div>
+            <div class="gesture-desc">Drag out your own frame, any size</div>
+          </div>
+
+          <div class="gesture">
+            <svg width="62" height="58" viewBox="0 0 76 72" fill="none">
+              <g fill="#f2f3f5">
+                <rect x="4" y="18" width="5" height="26" rx="2.5" />
+                <rect x="11" y="15" width="5" height="29" rx="2.5" />
+                <rect x="18" y="17" width="5" height="27" rx="2.5" />
+                <rect x="25" y="22" width="5" height="22" rx="2.5" />
+                <rect x="3" y="35" width="28" height="24" rx="9" />
+                <rect x="46" y="18" width="5" height="26" rx="2.5" />
+                <rect x="53" y="15" width="5" height="29" rx="2.5" />
+                <rect x="60" y="17" width="5" height="27" rx="2.5" />
+                <rect x="67" y="22" width="5" height="22" rx="2.5" />
+                <rect x="45" y="35" width="28" height="24" rx="9" />
+              </g>
+            </svg>
+            <div class="gesture-name">Two open palms</div>
+            <div class="gesture-desc">
+              Shoots the custom frame you just made
+            </div>
+          </div>
+
+          <div class="gesture">
+            <svg width="46" height="58" viewBox="0 0 56 72" fill="none">
+              <g fill="#f2f3f5">
+                <rect x="13" y="26" width="6" height="16" rx="3" />
+                <rect x="21" y="24" width="6" height="18" rx="3" />
+                <rect x="29" y="25" width="6" height="17" rx="3" />
+                <rect x="37" y="28" width="6" height="14" rx="3" />
+                <rect x="12" y="32" width="32" height="28" rx="11" />
+                <rect x="6" y="38" width="16" height="6" rx="3" />
+              </g>
+            </svg>
+            <div class="gesture-name">A closed hand</div>
+            <div class="gesture-desc">
+              Clears your frame, back to the default
+            </div>
+          </div>
+        </div>
+
+        <button class="start" id="startBtn">Start the camera</button>
+        <div class="permission-note" id="permissionNote">
+          Your browser will ask for camera access. Nothing leaves your device.
+        </div>
+
+        <details>
+          <summary>
+            How it works, and tips for better shots <span class="chev">⌄</span>
+          </summary>
+          <div class="details-body">
+            <h3>What's actually happening</h3>
+            <p style="margin: 0 0 4px">
+              A hand-tracking model finds 21 points on each hand, 30 times a
+              second. The app watches how those points move: fingertips above
+              their knuckles means an open palm, and the gap between two index
+              fingers becomes the corners of your frame.
+            </p>
+
+            <h3>Taking a shot</h3>
+            <ul>
+              <li>
+                Hold the gesture steady — a
+                <strong>three second countdown</strong> appears on screen.
+              </li>
+              <li>
+                The hand outlines disappear once the countdown starts, so they
+                never end up in the photo.
+              </li>
+              <li>A white flash and shutter sound means it's captured.</li>
+              <li>
+                Then <strong>Save</strong> to download it, or
+                <strong>Retake</strong> to try again.
+              </li>
+            </ul>
+
+            <h3>Framing</h3>
+            <ul>
+              <li>
+                A white rectangle is always on screen — that's exactly what gets
+                saved.
+              </li>
+              <li>
+                Point both index fingers to drag out a different size. Move them
+                apart for wider, closer for tighter.
+              </li>
+              <li>
+                Close one hand to throw that frame away and go back to the
+                default.
+              </li>
+            </ul>
+
+            <h3>If it isn't picking you up</h3>
+            <ul>
+              <li>
+                More light helps most — hand tracking struggles in dim rooms.
+              </li>
+              <li>
+                Keep hands <strong>inside the camera view</strong> and roughly
+                facing the lens.
+              </li>
+              <li>Plain backgrounds beat busy ones.</li>
+              <li>
+                Arm's length from the camera works better than very close.
+              </li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </div>
+
     <script src="script.js"></script>
   </body>
 </html>

@@ -44,6 +44,7 @@ hands.onResults((results) => {
 
   const vw = video.videoWidth;
   const vh = video.videoHeight;
+  if (!vw || !vh) return;
 
   if (canvas.width !== vw || canvas.height !== vh) {
     canvas.width = vw;
@@ -164,39 +165,41 @@ hands.onResults((results) => {
 });
 
 // Start camera
-navigator.mediaDevices
-  .getUserMedia({
-    video: {
-      facingMode: "user",
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-    },
-  })
-  .then((stream) => {
-    video.srcObject = stream;
+function startCamera() {
+  navigator.mediaDevices
+    .getUserMedia({
+      video: {
+        facingMode: "user",
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+    })
+    .then((stream) => {
+      video.srcObject = stream;
 
-    video.onloadedmetadata = () => {
-      // make canvas exactly to match video resolution
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      setDefaultFrame(); // a frame exists from a very first moment
+      video.onloadedmetadata = () => {
+        // make canvas exactly to match video resolution
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        setDefaultFrame(); // a frame exists from a very first moment
 
-      const camera = new Camera(video, {
-        onFrame: async () => {
-          if (processingFrame) return;
-          processingFrame = true;
-          try {
-            await hands.send({ image: video });
-          } finally {
-            processingFrame = false;
-          }
-        },
-      });
+        const camera = new Camera(video, {
+          onFrame: async () => {
+            if (processingFrame) return;
+            processingFrame = true;
+            try {
+              await hands.send({ image: video });
+            } finally {
+              processingFrame = false;
+            }
+          },
+        });
 
-      camera.start();
-    };
-  })
-  .catch((err) => console.error(err));
+        camera.start();
+      };
+    })
+    .catch((err) => console.error(err));
+}
 
 // the frame
 let frameBox = { x: 0, y: 0, width: 0, height: 0 };
@@ -224,14 +227,11 @@ function clampFrame() {
 
 function drawFrame() {
   if (frameBox.width < 20 || frameBox.height < 20) return;
+  if (!usingCustomFrame && !countdownActive) return;
 
   ctx.save();
   ctx.strokeStyle = "white";
   ctx.lineWidth = 3;
-
-  // the preset frame is dashed and faint, a hand-made one is solid
-  if (!usingCustomFrame && !countdownActive) return;
-
   ctx.strokeRect(frameBox.x, frameBox.y, frameBox.width, frameBox.height);
   ctx.restore();
 }
@@ -383,3 +383,27 @@ function showPreview(dataUrl) {
   overlay.appendChild(row);
   document.body.appendChild(overlay);
 }
+
+//into screen
+
+const intro = document.getElementById("intro");
+const startBtn = document.getElementById("startBtn");
+const helpBtn = document.getElementById("helpBtn");
+const permissionNote = document.getElementById("permissionNote");
+
+let cameraStarted = false;
+
+startBtn.addEventListener("click", () => {
+  intro.classList.add("hidden");
+
+  if (!cameraStarted) {
+    cameraStarted = true;
+    startCamera();
+    canvas.classList.add("live");
+    startBtn.textContent = "Back to the camera";
+  }
+});
+
+helpBtn.addEventListener("click", () => {
+  intro.classList.remove("hidden");
+});
