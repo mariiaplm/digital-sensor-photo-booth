@@ -400,6 +400,7 @@ startBtn.addEventListener("click", () => {
     cameraStarted = true;
     startCamera();
     canvas.classList.add("live");
+    document.getElementById("hud").classList.add("live");
     startBtn.textContent = "Back to the camera";
   }
 });
